@@ -10,8 +10,11 @@
 
 namespace studioespresso\seeder\services;
 
+use Craft;
 use craft\base\Component;
+use craft\base\ElementInterface;
 use craft\errors\FieldNotFoundException;
+use studioespresso\seeder\events\RegisterFieldTypeEvent;
 use studioespresso\seeder\records\SeederAssetRecord;
 use studioespresso\seeder\records\SeederCategoryRecord;
 use studioespresso\seeder\records\SeederEntryRecord;
@@ -30,99 +33,134 @@ use studioespresso\seeder\Seeder;
  * @author    Studio Espresso
  * @package   Seeder
  * @since     1.0.0
+ *
+ * @property void $registeredFieldTypes
  */
 class SeederService extends Component
 {
+    public const REGISTER_FIELD_TYPES = 'registerFieldTypes';
     /**
-     * @param $fields
-     * @param Entry $entry
+     * All registered Field Types
+     *
+     * @var array $_registeredFieldTypes
      */
-    public function populateFields($fields, $entry)
+    private $_registeredFieldTypes;
+
+    /**
+     * @param                  $fields
+     * @param ElementInterface $element
+     *
+     * @return \craft\base\ElementInterface
+     * @throws \yii\base\ExitException
+     */
+    public function populateFields($fields, ElementInterface $element): ElementInterface
     {
         $entryFields = [];
         foreach ($fields as $field) {
             try {
-                $fieldData = $this->isFieldSupported($field);
+                $fieldData = $this->getFieldData($field, $element);
                 if ($fieldData) {
-                    $fieldProvider = $fieldData[0];
-                    $fieldType = $fieldData[1];
-                    $entryFields[$field['handle']] = Seeder::$plugin->$fieldProvider->$fieldType($field, $entry);
+                    $entryFields[$field['handle']] = $fieldData;//Seeder::$plugin->$fieldProvider->$fieldType($field, $entry);
                 }
             } catch (FieldNotFoundException $e) {
                 if (Seeder::$plugin->getSettings()->debug) {
-                    dd($e);
+                    Craft::dd($e);
                 } else {
-                    echo "Fieldtype not supported:" . $fieldType . "\n";
+                    echo 'Fieldtype not supported:' . get_class($field) . "\n";
                 }
             }
         }
-        $entry->setFieldValues($entryFields);
+        $element->setFieldValues($entryFields);
 
-        return $entry;
-
+        return $element;
     }
 
     /**
-     * @param Entry $entry
+     * @param \craft\elements\Entry $entry
      */
-    public function saveSeededEntry($entry) {
-        $record          = new SeederEntryRecord();
+    public function saveSeededEntry($entry): void
+    {
+        $record = new SeederEntryRecord();
         $record->entryUid = $entry->uid;
         $record->section = $entry->sectionId;
         $record->save();
     }
 
     /**
-     * @param Asset $asset
+     * @param \craft\elements\Asset $asset
      */
-    public function saveSeededAsset($asset) {
+    public function saveSeededAsset($asset): void
+    {
         $record = new SeederAssetRecord();
         $record->assetUid = $asset->uid;
         $record->save();
     }
 
     /**
-     * @param User $user
+     * @param \craft\elements\User $user
      */
-    public function saveSeededUser($user) {
+    public function saveSeededUser($user): void
+    {
         $record = new SeederUserRecord();
         $record->userUid = $user->uid;
         $record->save();
     }
 
     /**
-     * @param Asset $asset
+     * @param \craft\elements\Category $category
      */
-    public function saveSeededCategory($category) {
+    public function saveSeededCategory($category): void
+    {
         $record = new SeederCategoryRecord();
         $record->section = $category->groupId;
         $record->categoryUid = $category->uid;
         $record->save();
     }
 
-    private function isFieldSupported($field)
+    /**
+     * Get all registered field Types
+     *
+     * @return array
+     *
+     * @author Robin Schambach
+     * @since  05.09.2019
+     */
+    public function getRegisteredFieldTypes(): array
     {
-        $fieldType = explode('\\', get_class($field));
-        $fieldProvider = $fieldType[1];
-        $fieldType = end($fieldType);
+        if ($this->_registeredFieldTypes === null) {
+            $event = new RegisterFieldTypeEvent();
+            if ($this->hasEventHandlers(self::REGISTER_FIELD_TYPES)) {
+                $this->trigger(self::REGISTER_FIELD_TYPES, $event);
+            }
 
-        if (class_exists('studioespresso\\seeder\\services\\fields\\' . $fieldProvider)) {
-            if (in_array($fieldType, get_class_methods(Seeder::getInstance()->$fieldProvider))) {
-                return [$fieldProvider, $fieldType];
-            } else {
-                if (Seeder::$plugin->getSettings()->debug) {
-                    throw new FieldNotFoundException('Fieldtype not supported: ' . $fieldType);
-                } else {
-                    echo "Fieldtype not supported:" . $fieldType . "\n";
-                }
-            }
-        } else {
-            if (Seeder::$plugin->getSettings()->debug) {
-                throw new FieldNotFoundException('Fieldtype not supported: ' . $fieldType);
-            } else {
-                echo "Fieldtype not supported:" . $fieldType . "\n";
-            }
+            $this->_registeredFieldTypes = $event->types;
         }
+
+        return $this->_registeredFieldTypes;
     }
 
+    /**
+     * Get the Field Data
+     *
+     * @param                              $field
+     *
+     * @param \craft\base\ElementInterface $element
+     *
+     * @return mixed
+     *
+     * @throws \craft\errors\FieldNotFoundException
+     * @author Robin Schambach
+     * @since  05.09.2019
+     */
+    public function getFieldData($field, ElementInterface $element)
+    {
+        $class = get_class($field);
+        $registeredFieldTypes = $this->getRegisteredFieldTypes();
+
+        if (isset($registeredFieldTypes[$class])) {
+            return call_user_func($registeredFieldTypes[$class], $field, $element);
+        }
+
+        throw new FieldNotFoundException('the field ' . $class . ' could not be found');
+    }
 }

@@ -10,9 +10,6 @@
 
 namespace studioespresso\seeder\models;
 
-use studioespresso\seeder\Seeder;
-
-use Craft;
 use craft\base\Model;
 
 /**
@@ -34,19 +31,51 @@ class Settings extends Model
     // Public Properties
     // =========================================================================
 
-    /**
-     * Some field model attribute
-     *
-     * @var string
-     */
-    public $someAttribute = 'Some Default';
-
     public $sets;
-
     public $debug = false;
-
     public $eachMatrixBlock = false;
-
     public $useLocalAssets = false;
-
+    /**
+     * Config to provide additional information/options for certain fields in certain layouts/ scenarios
+     * it's indexed by element type
+     * [
+     *      User::class => [
+     *          'fieldHandle' => [ options ]
+     *      ]
+     *      Entry::class => [
+     *          'sectionHandle' => [
+     *              'fieldHandle' => [ options ]
+     *          ]
+     *      ]
+     *      Category::class => [
+     *          'groupHandle' => [
+     *              'fieldHandle => [options]
+     *      ]
+     * ]
+     *
+     *     'fieldsConfig' => [
+     *          User::class => [
+     *              'phone'        => 'phoneNumber',
+     *              'street'       => 'streetName',
+     *              'zip'          => 'postcode',
+     *              'location'     => 'city',
+     *              'country'      => static function() {
+     *                  return 'DE';
+     *              },
+     *              'houseNumber'  => 'buildingNumber',
+     *              'textarea'     => static function() {
+     *                  return '';
+     *              },
+     *          }
+     *      ]
+     *
+     * @var array $fieldsConfig
+     */
+    public $fieldsConfig = [];
+    /**
+     * The language it should use
+     *
+     * @var string $fakerProvider
+     */
+    public $fakerProvider = 'de_DE';
 }

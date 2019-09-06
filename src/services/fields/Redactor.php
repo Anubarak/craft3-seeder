@@ -10,13 +10,10 @@
 
 namespace studioespresso\seeder\services\fields;
 
+use craft\base\Component;
 use Faker\Factory;
 use Faker\Provider\Base;
 use Faker\Provider\Lorem;
-use studioespresso\seeder\Seeder;
-
-use Craft;
-use craft\base\Component;
 
 /**
  * Fields Service
@@ -27,11 +24,12 @@ use craft\base\Component;
  */
 class Redactor extends Component
 {
-
     public $factory;
 
     public function __construct()
     {
+        parent::__construct();
+
         $this->factory = Factory::create();
     }
 
@@ -39,5 +37,4 @@ class Redactor extends Component
     {
         return Lorem::sentences(rand(5, 20), true);
     }
-
 }

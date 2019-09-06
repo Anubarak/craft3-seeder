@@ -35,10 +35,11 @@ class Entries extends Component
     /**
      * @param null $sectionId
      *
-     * @throws \Throwable
+     * @return bool|string|null
      * @throws \craft\errors\ElementNotFoundException
      * @throws \yii\base\Exception
      * @throws \yii\base\InvalidConfigException
+     * @throws \Throwable
      */
     public function generate($section = null, $count)
     {

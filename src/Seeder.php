@@ -101,23 +101,23 @@ class Seeder extends Plugin
         self::$plugin = $this;
 
         $this->components = [
-            "seeder" => SeederService::class,
-            "weeder" => WeederService::class,
-            "entries" => Entries::class,
-            "categories" => Categories::class,
-            "users" => Users::class,
-            "fields" => Fields::class,
-            "redactor" => Redactor::class,
-            "ckeditor" => CkEditor::class,
-            "supertable" => Supertable::class,
-            "cta" => CTA::class,
-            "positionfieldtype" => PositionService::class,
+            'seeder'            => SeederService::class,
+            'weeder'            => WeederService::class,
+            'entries'           => Entries::class,
+            'categories'        => Categories::class,
+            'users'             => Users::class,
+            'fields'            => Fields::class,
+            'redactor'          => Redactor::class,
+            'ckeditor'          => CkEditor::class,
+            'supertable'        => Supertable::class,
+            'cta'               => CTA::class,
+            'positionfieldtype' => PositionService::class,
         ];
 
         Event::on(
             UrlManager::class,
             UrlManager::EVENT_REGISTER_CP_URL_RULES,
-            function (RegisterUrlRulesEvent $event) {
+            static function (RegisterUrlRulesEvent $event) {
                 $event->rules['seeder'] = 'seeder/seeder/index';
             }
         );
@@ -134,11 +134,20 @@ class Seeder extends Plugin
     /**
      * Creates and returns the model used to store the plugin’s settings.
      *
-     * @return \craft\base\Model|null
+     * @return \studioespresso\seeder\models\Settings
      */
-    protected function createSettingsModel()
+    protected function createSettingsModel(): Settings
     {
         return new Settings();
     }
 
+    /**
+     * @noinspection PhpDocMissingThrowsInspection
+     * @return SeederService|object
+     */
+    public function getSeeder(): SeederService
+    {
+        /** @noinspection PhpUnhandledExceptionInspection */
+        return $this->get('seeder');
+    }
 }

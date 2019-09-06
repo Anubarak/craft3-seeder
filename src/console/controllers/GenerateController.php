@@ -10,11 +10,17 @@
 
 namespace studioespresso\seeder\console\controllers;
 
+use craft\elements\User;
+use craft\errors\FieldNotFoundException;
+use craft\helpers\Json;
+use secondred\base\fields\IncrementField;
 use studioespresso\seeder\Seeder;
 
 use Craft;
 use studioespresso\seeder\services\Seeder_EntriesService;
+use studioespresso\seeder\services\SeederService;
 use yii\console\Controller;
+use yii\console\ExitCode;
 use yii\helpers\Console;
 
 /**
@@ -62,6 +68,7 @@ class GenerateController extends Controller
                 return ['group','count'];
         }
     }
+
     /**
      * Generates entries for the specified section
      *
@@ -69,6 +76,10 @@ class GenerateController extends Controller
      * of the Console Command in ./craft help
      *
      * @return mixed
+     * @throws \craft\errors\ElementNotFoundException
+     * @throws \yii\base\Exception
+     * @throws \yii\base\InvalidConfigException
+     * @throws \Throwable
      */
     public function actionEntries()
     {
@@ -81,24 +92,28 @@ class GenerateController extends Controller
         return $result;
     }
 
-	/**
-	 * Generates categories for the specified group
-	 *
-	 * The first line of this method docblock is displayed as the description
-	 * of the Console Command in ./craft help
-	 *
-	 * @return mixed
-	 */
-	public function actionCategories()
+    /**
+     * Generates categories for the specified group
+     *
+     * The first line of this method docblock is displayed as the description
+     * of the Console Command in ./craft help
+     *
+     * @return mixed
+     * @throws \craft\errors\ElementNotFoundException
+     * @throws \yii\base\Exception
+     * @throws \yii\base\InvalidConfigException
+     * @throws \Throwable
+     */
+    public function actionCategories()
 	{
 
         if(!$this->group) {
             echo "Group handle or id missing, please specify\n";
-            return;
+            return ExitCode::CONFIG;
         }
 		$result = Seeder::$plugin->categories->generate($this->group, $this->count);
 
-		return $result;
+		return ExitCode::OK;
 	}
 
     /**
@@ -108,20 +123,44 @@ class GenerateController extends Controller
      * of the Console Command in ./craft help
      *
      * @return mixed
+     * @throws \craft\errors\ElementNotFoundException
+     * @throws \yii\base\Exception
+     * @throws \Throwable
      */
     public function actionUsers()
     {
-        if (Craft::$app->getEdition() != Craft::Pro) {
+        if (Craft::$app->getEdition() !== Craft::Pro) {
             echo "Users requires your Craft install to be upgrade to Pro. You can trial Craft Pro in the control panel\n";
-            return;
+            return ExitCode::CONFIG;
         }
 
-        if(!$this->group) {
-            echo "Group handle or id missing, please specify\n";
-            return;
-        }
+//        $user = new User();
+//        $fields = $user->getFieldLayout()->getFields();
+//        foreach ($fields as $field){
+//            try{
+//                $data = Seeder::$plugin->getSeeder()->getFieldData($field, $user);
+//
+//                if(is_string($data)){
+//                    $message = $data;
+//                }elseif (is_array($data)){
+//                    $message = Json::encode($data);
+//                }else{
+//                    try{
+//                        $message = (string)$data;
+//                    }catch (\Exception $exception){
+//                        $message = '';
+//                    }
+//                }
+//
+//                $this->stdout($field->handle . $message . PHP_EOL);
+//            }catch (FieldNotFoundException $exception){
+//                $this->stdout($field->handle . ' could not be found' . PHP_EOL);
+//            }
+//        }
+//        Craft::$app->getElements()->saveElement($user);
+
         $result = Seeder::$plugin->users->generate($this->group, $this->count);
-        return $result;
+        return ExitCode::OK;
     }
 
     /**
@@ -130,7 +169,13 @@ class GenerateController extends Controller
      * The first line of this method docblock is displayed as the description
      * of the Console Command in ./craft help
      *
+     * @param string $name
+     *
      * @return mixed
+     * @throws \craft\errors\ElementNotFoundException
+     * @throws \yii\base\Exception
+     * @throws \yii\base\InvalidConfigException
+     * @throws \Throwable
      */
     public function actionSet($name = 'default') {
         if(!array_key_exists($name, Seeder::$plugin->getSettings()->sets)) {

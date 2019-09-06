@@ -40,25 +40,23 @@ use yii\base\Model;
 class Users extends Component
 {
     /**
-     * @param null $sectionId
+     * @param null $group
+     * @param int  $count
      *
-     * @throws \Throwable
+     * @return bool
      * @throws \craft\errors\ElementNotFoundException
      * @throws \yii\base\Exception
-     * @throws \yii\base\InvalidConfigException
+     * @throws \Throwable
      */
-    public function generate($group = null, $count)
+    public function generate($group = null, $count = 20): bool
     {
-
-        if (ctype_digit($group)) {
-            $userGroup = Craft::$app->userGroups->getGroupById((int)$group);
-        } else {
-            $userGroup = Craft::$app->userGroups->getGroupByHandle($group);
-        }
-
-        if (!$userGroup) {
-            echo "Group not found\n";
-            return false;
+        $userGroup = null;
+        if($group !== null){
+            if (ctype_digit($group)) {
+                $userGroup = Craft::$app->userGroups->getGroupById((int)$group);
+            } else {
+                $userGroup = Craft::$app->userGroups->getGroupByHandle($group);
+            }
         }
 
         $faker = Factory::create();
@@ -77,12 +75,15 @@ class Users extends Component
             Seeder::$plugin->seeder->saveSeededUser($user);
             Seeder::$plugin->seeder->populateFields($fields, $user);
             Craft::$app->elements->saveElement($user);
-            Craft::$app->users->assignUserToGroups($user->id, [$userGroup->id]);
+            if($userGroup !== null){
+                Craft::$app->users->assignUserToGroups($user->id, [$userGroup->id]);
+            }
             $current++;
             Console::updateProgress($current, $count);
         }
         Console::endProgress();
 
+        return true;
     }
 
 }
