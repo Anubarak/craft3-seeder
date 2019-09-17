@@ -13,7 +13,6 @@ namespace studioespresso\seeder\services;
 use Craft;
 use craft\base\Component;
 use craft\elements\Entry;
-use Faker\Factory;
 use studioespresso\seeder\Seeder;
 use yii\helpers\Console;
 
@@ -33,15 +32,17 @@ use yii\helpers\Console;
 class Entries extends Component
 {
     /**
-     * @param null $sectionId
+     * @param null $section
+     * @param int  $count
      *
      * @return bool|string|null
      * @throws \craft\errors\ElementNotFoundException
      * @throws \yii\base\Exception
+     * @throws \yii\base\ExitException
      * @throws \yii\base\InvalidConfigException
      * @throws \Throwable
      */
-    public function generate($section = null, $count)
+    public function generate($section = null, $count = 20)
     {
         if (ctype_digit($section)) {
             $section = Craft::$app->sections->getSectionById((int)$section);
@@ -53,7 +54,6 @@ class Entries extends Component
             echo "Section not found\n";
             return false;
         }
-        $faker = Factory::create();
 
         $entryTypes = $section->getEntryTypes();
         $current = 0;
