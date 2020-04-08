@@ -252,19 +252,24 @@ class Fields extends Component
      * @param Entry      $entry
      *
      * @return array
+     * @throws \Exception
      */
     public function Categories($field, $entry): array
     {
-        $catGroup = Craft::$app->getCategories()->getGroupById($field->groupId);
+        $source = $field->source;
+        $groupId = null;
+        if($source){
+            $groupUid = str_replace('group:', '', $source);
+            $groupId = Db::idByUid(\craft\db\Table::CATEGORYGROUPS, $groupUid);
+        }
+
         $cats = Category::find()
-            ->groupId($field->groupId)
+            ->groupId($groupId)
+            ->limit(random_int(1, 2))
+            ->orderBy(new Expression('rand()'))
             ->ids();
 
-        $categories = [];
-        for ($x = 1; $x <= $field->branchLimit; $x++) {
-            $categories[] = $cats[array_rand($cats)];
-        }
-        return $categories;
+        return $cats;
     }
 
     /**

@@ -12,7 +12,9 @@ namespace studioespresso\seeder\services;
 
 use Craft;
 use craft\base\Component;
+use craft\base\Element;
 use craft\elements\Entry;
+use craft\elements\User;
 use studioespresso\seeder\Seeder;
 use yii\helpers\Console;
 
@@ -58,6 +60,7 @@ class Entries extends Component
         $entryTypes = $section->getEntryTypes();
         $current = 0;
         $total = count($entryTypes) * $count;
+        $admin = User::find()->admin(true)->one();
         Console::startProgress($current, $count);
         foreach ($section->getEntryTypes() as $entryType) {
             for ($x = 1; $x <= $count; $x++) {
@@ -71,8 +74,10 @@ class Entries extends Component
                     'typeId' => $entryType->id,
                     'title' => Seeder::$plugin->fields->Title(),
                 ]);
+                $entry->authorId = $admin->id;
                 Craft::$app->getElements()->saveElement($entry);
                 Seeder::$plugin->seeder->saveSeededEntry($entry);
+                $entry->setScenario(Element::SCENARIO_LIVE);
                 if($entryType->fieldLayoutId) {
                     $entry = Seeder::$plugin->seeder->populateFields($typeFields, $entry);
                     Craft::$app->getElements()->saveElement($entry);
