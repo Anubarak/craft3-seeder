@@ -8,8 +8,10 @@
  * @email     anubarak1993@gmail.com
  * @copyright Copyright (c) 2019 Robin Schambach
  */
+
 namespace studioespresso\seeder\events;
 
+use craft\fields\Assets;
 use craft\fields\Categories;
 use craft\fields\Checkboxes;
 use craft\fields\Color;
@@ -55,7 +57,7 @@ class RegisterFieldTypeEvent extends Event
         $this->types[MultiSelect::class] = [$fieldsService, 'MultiSelect'];
         $this->types[Table::class] = [$fieldsService, 'Table'];
         $this->types[Tags::class] = [$fieldsService, 'Tags'];
+        $this->types[Assets::class] = [$fieldsService, 'Assets'];
         $this->types[Entries::class] = [$fieldsService, 'Entries'];
-        $this->types['craft\\redactor'] = [Seeder::$plugin->redactor, 'Field'];
-    }
+        $this->types['craft\\redactor\\Field'] = [Seeder::$plugin->redactor, 'Field'];    }
 }

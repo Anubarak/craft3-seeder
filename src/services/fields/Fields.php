@@ -457,69 +457,39 @@ class Fields extends Component
     }
 
     /**
-     * @param AssetsField $field
+     * Assets
+     *
+     * @param \craft\fields\Assets $field
      *
      * @return array
+     *
+     * @author Robin Schambach
+     * @since  04.12.2020
      * @throws \Exception
      */
-    public function Assets($field, $entry): array
+    public function Assets(\craft\fields\Assets $field): array
     {
-        $assets = [];
+        $source = $field->sources;
+        $volumeIds = [];
+        if($source !== '*'){
+            $volumeUid = str_replace('folder:', '', $source);
+            $volumeIds[] = Db::idByUid(\craft\db\Table::VOLUMES, $volumeUid);
+        }
 
-        if ($field->limit) {
+        $limit = 2;
+        if($field->limit){
             $limit = $field->limit;
-        } else {
-            $limit = 5;
         }
 
-        if (Seeder::getInstance()->getSettings()->useLocalAssets) {
-            $assetSettings = Seeder::getInstance()->getSettings()->useLocalAssets;
-            $folder = VolumeFolder::findOne([
-                'volumeId' => $assetSettings['volumeId'],
-                'path' => $assetSettings['path']
-            ]);
-
-            $localAssets = Asset::find();
-            $localAssets->orderBy('RAND()');
-            $localAssets->folderId($folder->id);
-            $localAssets->limit($limit);
-            $assets = array_values($localAssets->ids());
-
-        } else {
-            $path = new Path();
-            $dir = $path->getTempAssetUploadsPath() . '/seeder/';
-            if (!is_dir($dir) && !mkdir($dir) && !is_dir($dir)) {
-                throw new RuntimeException(sprintf('Directory "%s" was not created', $dir));
-            }
-
-            $folder = explode(':', $field->defaultUploadLocationSource);
-            $folderUid = $folder[1];
-            $assetFolder = Craft::$app->volumes->getVolumeByUid($folderUid);
-
-            for ($x = 1, $xMax = random_int(1, $limit); $x <= $xMax; $x++) {
-
-                $image = $this->factory->imageUrl(1600, 1200, null, true);
-                $ch = curl_init();
-                curl_setopt($ch, CURLOPT_URL, $image);
-                curl_setopt($ch, CURLOPT_HEADER, 0);
-                curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-                curl_setopt($ch, CURLOPT_BINARYTRANSFER, 1);
-                curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
-                $picture = curl_exec($ch);
-                curl_close($ch);
-
-                $tmpImage = 'photo-' . mt_rand() . '.jpg';
-                $tempPath = $dir . $tmpImage;
-                $saved = file_put_contents($tempPath, $picture);
-
-                $result = $this->uploadNewAsset($assetFolder->id, $tempPath);
-                Seeder::$plugin->seeder->saveSeededAsset($result);
-                $assets[] = $result->id;
-            }
+        $query = Asset::find()
+            ->limit(random_int(1, $limit))
+            ->orderBy(new Expression('rand()'));
+        if($volumeIds){
+            $query->volumeId($volumeIds);
         }
+        $assetIds = $query->ids();
 
-        return $assets;
-
+        return $assetIds;
     }
 
     /**
