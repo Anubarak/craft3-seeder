@@ -38,12 +38,7 @@ use craft\fields\Url;
 use craft\fields\Users;
 use craft\helpers\Assets;
 use craft\helpers\Db;
-use craft\helpers\ElementHelper;
-use craft\models\Section;
-use craft\records\VolumeFolder;
-use craft\services\Path;
 use Faker\Factory;
-use RuntimeException;
 use studioespresso\seeder\Seeder;
 use yii\base\NotSupportedException;
 use yii\db\Expression;
@@ -397,21 +392,11 @@ class Fields extends Component
      * @param Entry $entry
      *
      * @return array
-     * @throws \craft\errors\ElementNotFoundException
-     * @throws \yii\base\Exception
-     * @throws \Throwable
+     * @throws \Exception
      */
     public function Tags($field, $entry): array
     {
-        $tags = [];
-        for ($x = 1, $xMax = random_int(1, 5); $x <= $xMax; $x++) {
-            $tag = new Tag();
-            $tag->groupId = $field->groupId;
-            $tag->title = $this->title();
-            Craft::$app->elements->saveElement($tag);
-            $tags[] = $tag->id;
-        }
-        return $tags;
+        return Tag::find()->limit(random_int(1, 5))->orderBy('rand()')->ids();
     }
 
     /**
